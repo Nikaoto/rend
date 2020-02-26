@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REND_MATH_H_
+#define REND_MATH_H_
 
 #define SWAP(a, b, t) { t tmp = a; a = b; b = tmp; }
 
@@ -32,3 +33,4 @@ typedef struct Model {
 int is_num(char c);
 double power(double n, int p);
 
+#endif // REND_MATH_H_
