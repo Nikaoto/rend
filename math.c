@@ -1,19 +1,23 @@
 #include "math.h"
+#include <stdlib.h>
 
-Vec2i new_Vec2i(int x, int y)
+// Returns unbiased random integer in range [0, n)
+int randint(int n)
 {
-    Vec2i v = {
-        .x = x,
-        .y = y
-    };
-    return v;
+    if (n - 1 == RAND_MAX) {
+        return rand();
+    }
+
+    int r;
+    int rand_end = (RAND_MAX / n) * n;
+    while ((r = rand()) >= rand_end);
+    return r % n;
 }
 
 int abs(int n)
 {
     return (n < 0) ? -n : n;
 }
-
 
 int is_num(char c)
 {
@@ -35,4 +39,13 @@ double power(double n, int p)
     while (p-- > 0)
         ans *= n;
     return ans;
+}
+
+Vec2i new_Vec2i(int x, int y)
+{
+    Vec2i v = {
+        .x = x,
+        .y = y
+    };
+    return v;
 }

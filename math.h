@@ -3,6 +3,7 @@
 
 #define SWAP(a, b, T) do { T tmp = a; a = b; b = tmp; } while (0)
 
+int randint(int n);
 int abs(int n);
 
 typedef struct Vec3 {
