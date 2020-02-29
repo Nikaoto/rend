@@ -47,9 +47,62 @@ void rect(int x0, int y0, int x1, int y1)
 
 void triangle(Vec2i a, Vec2i b, Vec2i c)
 {
-    line(a.x, a.y, b.x, b.y);
+    // Sort by y coord ascending (a.y < b.y< c.y)
+    if (a.y > b.y) SWAP(a, b, Vec2i);
+    if (b.y > c.y) SWAP(b, c, Vec2i);
+    if (a.y > c.y) SWAP(a, c, Vec2i);
+    
+    gfx_color(255, 0, 0);
     line(a.x, a.y, c.x, c.y);
+    line(a.x, a.y, b.x, b.y);
     line(b.x, b.y, c.x, c.y);
+
+    int ac_dy = c.y - a.y;
+    int ac_dx = c.x - a.x;
+    float ac_k = (float) ac_dx / ac_dy;
+
+    // Draw ab segment
+    gfx_color(255, 255, 255);
+    int ab_dy = b.y - a.y;
+    int ab_dx = b.x - a.x;
+    float ab_k = (float) ab_dx / ab_dy;
+    if (ab_dx < 0) {
+        SWAP(ac_k, ab_k, float);
+    }
+    for (int y = a.y; y <= b.y; y++) {
+        for (int x = a.x + ac_k * (y - a.y); x <= a.x + ab_k * (y - a.y); x++) {
+            gfx_point(x, y);
+        }
+    }
+
+    gfx_color(255, 0, 0);
+    line(a.x, a.y, c.x, c.y);
+    line(a.x, a.y, b.x, b.y);
+    line(b.x, b.y, c.x, c.y);
+
+    // Swap them back
+    if (ab_dx < 0) {
+        SWAP(ac_k, ab_k, float);
+    }
+    
+    // Draw bc segment
+    gfx_color(255, 0, 255);
+    int bc_dy = c.y - b.y;
+    int bc_dx = c.x - b.x;
+    float bc_k = (float) bc_dx / bc_dy;
+    int xoff = a.x + ac_k * (b.y - a.y);
+    int xoff2 = b.x;
+    if (bc_dx > 0) {
+        SWAP(a.x, b.x, int);
+        SWAP(ac_k, bc_k, float);
+        xoff = a.x;
+        xoff2 = b.x + bc_k * (b.y - a.y);
+    }
+    for (int y = b.y; y <= c.y; y++) {
+        for (int x = xoff + ac_k * (y - b.y); x <= xoff2 + bc_k * (y - b.y); x++) {
+            gfx_point(x, y);
+        }
+    }
 }
 
 char* obj_file_name = "african_head.obj";
@@ -61,17 +114,17 @@ int main(void)
     gfx_open(width, height, "rend");
 
     char c;
-//    Model* m = parse_obj_file("african_head.obj");
+    /* Model* m = parse_obj_file(obj_file_name); */
     while(1) {
         gfx_color(255, 255, 255);
 
-        Vec2i t0[3] = {new_Vec2i(10, 70),   new_Vec2i(50, 160),  new_Vec2i(70, 80)}; 
-        Vec2i t1[3] = {new_Vec2i(180, 50),  new_Vec2i(150, 1),   new_Vec2i(70, 180)}; 
-        Vec2i t2[3] = {new_Vec2i(180, 150), new_Vec2i(120, 160), new_Vec2i(130, 180)}; 
+        Vec2i t0[3] = {new_Vec2i(10, 70), new_Vec2i(50, 160), new_Vec2i(70, 80)};
+        Vec2i t1[3] = {new_Vec2i(180, 50),  new_Vec2i(150, 1),   new_Vec2i(70, 180)};
+        Vec2i t2[3] = {new_Vec2i(180, 150), new_Vec2i(120, 160), new_Vec2i(130, 180)};
         triangle(t0[0], t0[1], t0[2]);
         triangle(t1[0], t1[1], t1[2]);
         triangle(t2[0], t2[1], t2[2]);
-        
+
         /* for (int i = 0; i < m->face_count; i++) { */
         /*     for (int j = 0; j < 3; j++) { */
         /*         Vec3 v0 = m->vertices[m->faces[i][j]]; */

@@ -1,7 +1,7 @@
 #ifndef REND_MATH_H_
 #define REND_MATH_H_
 
-#define SWAP(a, b, t) { t tmp = a; a = b; b = tmp; }
+#define SWAP(a, b, T) do { T tmp = a; a = b; b = tmp; } while (0)
 
 int abs(int n);
 
