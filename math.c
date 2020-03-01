@@ -19,6 +19,11 @@ int abs(int n)
     return (n < 0) ? -n : n;
 }
 
+float absf(float f)
+{
+    return (f < 0) ? -f : f;
+}
+
 int is_num(char c)
 {
     return c >= '0' && c <= '9';

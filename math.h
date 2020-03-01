@@ -5,6 +5,7 @@
 
 int randint(int n);
 int abs(int n);
+float absf(float f);
 
 typedef struct Vec3 {
     double x, y, z;

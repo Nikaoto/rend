@@ -162,8 +162,6 @@ Model* parse_obj_file(char* filename)
     m->face_count = 0;
     m->faces = malloc(0);
 
-    //int tmp_faces[];
-
     // Populate vertices and tmp faces
     size_t row = 0;
     size_t col = 0;

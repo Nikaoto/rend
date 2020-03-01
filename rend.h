@@ -6,4 +6,7 @@
 #define logvec(v) printf(#v " = (%g, %g, %g)\n", v.x, v.y, v.z);
 #define logvec2i(v) printf(#v " = (%i, %i)\n", v.x, v.y);
 
+#define wireframe    0
+#define render_model 1
+
 #endif // REND_H_
