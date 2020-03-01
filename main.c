@@ -49,8 +49,6 @@ void triangle(Vec2i a, Vec2i b, Vec2i c)
 {
     if (a.y == b.y && a.y == c.y) return;
 
-    gfx_color(255, 255, 255);
-
     // Sort by y coord ascending (a.y < b.y< c.y)
     if (a.y > b.y) SWAP(a, b, Vec2i);
     if (a.y > c.y) SWAP(a, c, Vec2i);
@@ -144,10 +142,7 @@ int main(void)
                 screen_coords[j].x = (v.x + 1.) * width/2;
                 screen_coords[j].y = height - (v.y + 1.) * height/2;
             }
-            //gfx_color(randint(256), randint(256), randint(256));
-            /* gfx_line(screen_coords[0].x, screen_coords[0].y, screen_coords[1].x, screen_coords[1].y); */
-            /* gfx_line(screen_coords[1].x, screen_coords[1].y, screen_coords[2].x, screen_coords[2].y); */
-            /* gfx_line(screen_coords[0].x, screen_coords[0].y, screen_coords[2].x, screen_coords[2].y); */
+            gfx_color(randint(256), randint(256), randint(256));
             triangle(screen_coords[0], screen_coords[1], screen_coords[2]);
         }
         #endif
