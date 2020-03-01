@@ -37,7 +37,7 @@ void line(int x0, int y0, int x1, int y1)
     }
 }
 
-void rect(int x0, int y0, int x1, int y1)
+void quad(int x0, int y0, int x1, int y1)
 {
     line(x0, y0, x1, y0);
     line(x1, y0, x1, y1);
@@ -114,8 +114,12 @@ void triangle(Vec2i a, Vec2i b, Vec2i c)
 
 char* obj_file_name = "african_head.obj";
 
-int main(void)
+int main(int argc, char** argv)
 {
+    if (argc > 1) {
+        obj_file_name = argv[1];
+    }
+
     int width = 600;
     int height = 600;
     gfx_open(width, height, "rend");
@@ -126,13 +130,14 @@ int main(void)
     #endif
     while(1) {
         gfx_color(255, 255, 255);
-        triangle(new_Vec2i(10, 70),   new_Vec2i(50, 160),  new_Vec2i(70, 80));
-        triangle(new_Vec2i(180, 50),  new_Vec2i(150, 1),   new_Vec2i(70, 180));
-        triangle(new_Vec2i(180, 150), new_Vec2i(120, 160), new_Vec2i(130, 180));
-        triangle(new_Vec2i(200, 200), new_Vec2i(200, 0), new_Vec2i(300, 0));
-        triangle(new_Vec2i(300, 0), new_Vec2i(400, 0), new_Vec2i(400, 200));
-        triangle(new_Vec2i(200, 200), new_Vec2i(200, 300), new_Vec2i(300, 300));
-        triangle(new_Vec2i(300, 300), new_Vec2i(400, 300), new_Vec2i(400, 200));
+
+        /* triangle(new_Vec2i(10, 70),   new_Vec2i(50, 160),  new_Vec2i(70, 80)); */
+        /* triangle(new_Vec2i(180, 50),  new_Vec2i(150, 1),   new_Vec2i(70, 180)); */
+        /* triangle(new_Vec2i(180, 150), new_Vec2i(120, 160), new_Vec2i(130, 180)); */
+        /* triangle(new_Vec2i(200, 200), new_Vec2i(200, 0), new_Vec2i(300, 0)); */
+        /* triangle(new_Vec2i(300, 0), new_Vec2i(400, 0), new_Vec2i(400, 200)); */
+        /* triangle(new_Vec2i(200, 200), new_Vec2i(200, 300), new_Vec2i(300, 300)); */
+        /* triangle(new_Vec2i(300, 300), new_Vec2i(400, 300), new_Vec2i(400, 200)); */
 
         #if render_model == 1
         for (int i = 0; i < m->face_count; i++) {
