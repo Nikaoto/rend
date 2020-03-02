@@ -233,3 +233,12 @@ Model* parse_obj_file(char* filename)
     free(obj_string);
     return m;
 }
+
+void free_model(Model* m) {
+    for (int i = 0; i < m->face_count; i++) {
+        free(m->faces[i]);
+    }
+    free(m->faces);
+    free(m->vertices);
+    free(m);
+}

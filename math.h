@@ -25,6 +25,13 @@ typedef struct Vec2i {
 
 Vec2i new_Vec2i(int x, int y);
 
+Vec3f add_vec3f(Vec3f a, Vec3f b);
+Vec3f sub_vec3f(Vec3f a, Vec3f b);
+float magnitude(Vec3f a);
+Vec3f normalize(Vec3f a);
+float dot_prod(Vec3f a, Vec3f b);
+Vec3f cross_prod(Vec3f a, Vec3f b);
+
 typedef struct Model {
     Vec3* vertices;
     int vertex_count;

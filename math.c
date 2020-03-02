@@ -1,5 +1,6 @@
-#include "math.h"
 #include <stdlib.h>
+#include <math.h>
+#include "math.h"
 
 // Returns unbiased random integer in range [0, n)
 int randint(int n)
@@ -53,4 +54,59 @@ Vec2i new_Vec2i(int x, int y)
         .y = y
     };
     return v;
+}
+
+inline float magnitude(Vec3f a)
+{
+    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+Vec3f normalize(Vec3f a)
+{
+    float m = magnitude(a);
+    a.x = a.x / m;
+    a.y = a.y / m;
+    a.z = a.z / m;
+    return a;
+}
+
+Vec3f add_vec3f(Vec3f a, Vec3f b)
+{
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+    return a;
+}
+
+Vec3f sub_vec3f(Vec3f a, Vec3f b)
+{
+    a.x -= b.x;
+    a.y -= b.y;
+    a.z -= b.z;
+    return a;
+}
+
+float dot_prod(Vec3f a, Vec3f b)
+{
+    Vec3f c = {
+        .x = a.x - b.x,
+        .y = a.y - b.y,
+        .z = a.z - b.z
+    };
+
+    float am = magnitude(a);
+    float bm = magnitude(b);
+    float cm = magnitude(c);
+
+    return (am*am + bm*bm - cm*cm) / 2.;
+}
+
+Vec3f cross_prod(Vec3f a, Vec3f b)
+{
+    Vec3f n = {
+        .x = a.y * b.z - a.z * b.y,
+        .y = a.z * b.x - a.x * b.z,
+        .z = a.x * b.y - a.y * b.x
+    };
+    return n;
 }

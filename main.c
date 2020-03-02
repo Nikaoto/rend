@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include "rend.h"
 #include "gfx.h"
 #include "objparser.h"
@@ -45,66 +46,104 @@ void quad(int x0, int y0, int x1, int y1)
     line(x0, y1, x0, y0);
 }
 
-void triangle(Vec2i a, Vec2i b, Vec2i c)
+void triangle(Vec3f a, Vec3f b, Vec3f c, float* zbuf)
 {
     if (a.y == b.y && a.y == c.y) return;
 
     // Sort by y coord ascending (a.y < b.y< c.y)
-    if (a.y > b.y) SWAP(a, b, Vec2i);
-    if (a.y > c.y) SWAP(a, c, Vec2i);
-    if (b.y > c.y) SWAP(b, c, Vec2i);
+    if (a.y > b.y) SWAP(a, b, Vec3f);
+    if (a.y > c.y) SWAP(a, c, Vec3f);
+    if (b.y > c.y) SWAP(b, c, Vec3f);
 
-    int ac_dx = c.x - a.x;
-    int ac_dy = c.y - a.y;
+    float ac_dx = c.x - a.x;
+    float ac_dy = c.y - a.y;
+    float ac_dz = c.z - a.z;
     float ac_k = (float) ac_dx / (float) ac_dy;
+    float ac_zk = (float) ac_dz / (float) ac_dy;
 
-    int ab_dx = b.x - a.x;
-    int ab_dy = b.y - a.y;
+    float ab_dx = b.x - a.x;
+    float ab_dy = b.y - a.y;
+    float ab_dz = b.z - a.z;
+    
     // Can't sweep region from AB to AC if it doesn't exist
     if (ab_dy != 0) {
         float ab_k = (float) ab_dx / (float) ab_dy;
+        float ab_zk = (float) ab_dz / (float) ab_dy;
 
-        // Swap so startx <= endx
+        /* Swap so startx <= endx */
         int swapped = 0;
         if (ac_k > ab_k) {
             SWAP(ac_k, ab_k, float);
             swapped = 1;
         }
+        /* Swap so startz <= endz */
+        int swapped_zk = 0;
+        if (ac_zk > ab_zk) {
+            SWAP(ac_zk, ab_zk, float);
+            swapped_zk = 1;
+        }
+
         for (int y = a.y; y <= b.y; y++) {
+            float startz = a.z + (y - a.y) * ac_zk;
+            float endz = a.z + (y - a.y) * ab_zk;
+            float dz = endz - startz;
             int startx = a.x + (y - a.y) * ac_k;
             int endx = a.x + (y - a.y) * ab_k;
+            int dx = endx - startx + 1;
             for (int x = startx; x <= endx; x += 1) {
-                gfx_point(x, y);
+                float z = startz + dz * (float) ((x - startx) / dx);
+                int zi = (int)(x + y * WINDOW_WIDTH);
+                if (z > zbuf[zi]) {
+                    gfx_point(x, y);
+                    zbuf[zi] = z;
+                }
             }
         }
         // Swap them back
         if (swapped) {
             SWAP(ab_k, ac_k, float);
         }
+        if (swapped_zk) {
+            SWAP(ab_zk, ac_zk, float);
+        }
     }
 
-    int bc_dx = c.x - b.x;
-    int bc_dy = c.y - b.y;
-
+    float bc_dx = c.x - b.x;
+    float bc_dy = c.y - b.y;
+    float bc_dz = c.z - b.z;
+    
     /* Can't sweep region from AC to BC if it doesn't exist */
     if (bc_dy != 0) {
-        /* printf("drawing second region\n"); */
         float bc_k = (float) bc_dx / (float) bc_dy;
+        float bc_zk = (float) bc_dz / (float) bc_dy;
 
         /* If AC is to the right and BC is to the left */
         if (ac_k < bc_k) {
             SWAP(ac_k, bc_k, float);
         }
+        /* Makes sure that startz < endz  */
+        if (ac_zk < bc_zk) {
+            SWAP(ac_zk, bc_zk, float);
+        }
         for (int y = c.y; y >= b.y; y--) {
+            float startz = c.z + (y - c.y) * ac_zk;
+            float endz = c.z + (y - c.y) * bc_zk;
+            float dz = endz - startz;
             int startx = c.x + (y - c.y) * ac_k;
             int endx = c.x + (y - c.y) * bc_k;
+            int dx = endx - startx + 1;
             for (int x = startx; x <= endx; x++) {
-                gfx_point(x, y);
+                float z = startz + dz * (x - startx) / dx;
+                int zi = (int)(x + y * WINDOW_WIDTH);
+                if (z > zbuf[zi]) {
+                    gfx_point(x, y);
+                    zbuf[zi] = z;
+                }
             }
         }
     }
 
-    #if wireframe == 1
+    #if WIREFRAME == 1
     gfx_color(255, 0, 0);
     line(a.x, a.y, c.x, c.y);
     line(a.x, a.y, b.x, b.y);
@@ -120,48 +159,57 @@ int main(int argc, char** argv)
         obj_file_name = argv[1];
     }
 
-    int width = 600;
-    int height = 600;
+    int width = WINDOW_WIDTH;
+    int height = WINDOW_HEIGHT;
     gfx_open(width, height, "rend");
 
     char c;
-    #if render_model == 1
+    #if RENDER_MODEL == 1
     Model* m = parse_obj_file(obj_file_name);
     #endif
+
+    Vec3f light_dir = { .x = 0, .y = 0, .z = 1 };
+    float *zbuffer = malloc(sizeof(float) * width * height);
+    for (int i = 0; i < width*height; i++) {
+        zbuffer[i] = 0.5;
+    }
+
     while(1) {
         gfx_color(255, 255, 255);
 
-        /* triangle(new_Vec2i(10, 70),   new_Vec2i(50, 160),  new_Vec2i(70, 80)); */
-        /* triangle(new_Vec2i(180, 50),  new_Vec2i(150, 1),   new_Vec2i(70, 180)); */
-        /* triangle(new_Vec2i(180, 150), new_Vec2i(120, 160), new_Vec2i(130, 180)); */
-        /* triangle(new_Vec2i(200, 200), new_Vec2i(200, 0), new_Vec2i(300, 0)); */
-        /* triangle(new_Vec2i(300, 0), new_Vec2i(400, 0), new_Vec2i(400, 200)); */
-        /* triangle(new_Vec2i(200, 200), new_Vec2i(200, 300), new_Vec2i(300, 300)); */
-        /* triangle(new_Vec2i(300, 300), new_Vec2i(400, 300), new_Vec2i(400, 200)); */
-
-        #if render_model == 1
+        #if RENDER_MODEL == 1
         for (int i = 0; i < m->face_count; i++) {
-            Vec2i screen_coords[3];
+
+            // Get screen_coords
+            Vec3f screen_coords[3];
+            Vec3f world_coords[3];
             for (int j = 0; j < 3; j++) {
                 Vec3 v = m->vertices[m->faces[i][j]];
+                world_coords[j] = (Vec3f) { .x = v.x, .y = v.y, .z = v.z };
                 screen_coords[j].x = (v.x + 1.) * width/2;
                 screen_coords[j].y = height - (v.y + 1.) * height/2;
+                screen_coords[j].z = v.z;
             }
-            gfx_color(randint(256), randint(256), randint(256));
-            triangle(screen_coords[0], screen_coords[1], screen_coords[2]);
+
+            // Get color of the face
+            Vec3f side1 = sub_vec3f(world_coords[1], world_coords[0]);
+            Vec3f side2 = sub_vec3f(world_coords[2], world_coords[0]);
+            Vec3f normal = normalize(cross_prod(side1, side2));
+            float intensity = dot_prod(normal, light_dir);
+            if (intensity > 0) {
+                gfx_color(intensity * 255, intensity * 255, intensity * 255);
+                triangle(screen_coords[0], screen_coords[1], screen_coords[2], zbuffer);
+            }
         }
         #endif
         c = gfx_wait();
         if (c == 'q' || c == '\x1b') break;
     }
 
-    #if render_model == 1
-    for (int i = 0; i < m->face_count; i++) {
-        free(m->faces[i]);
-    }
-    free(m->faces);
-    free(m->vertices);
-    free(m);
+    free(zbuffer);
+
+    #if RENDER_MODEL == 1
+    free_model(m);
     #endif
 
     return 0;
