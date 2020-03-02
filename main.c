@@ -163,23 +163,25 @@ int main(int argc, char** argv)
     int height = WINDOW_HEIGHT;
     gfx_open(width, height, "rend");
 
-    char c;
     #if RENDER_MODEL == 1
     Model* m = parse_obj_file(obj_file_name);
     #endif
 
-    Vec3f light_dir = { .x = 0, .y = 0, .z = 1 };
+    Vec3f starting_light_dir = { .x = 0, .y = 0, .z = 1 };
+    Vec3f light_dir = starting_light_dir;
     float *zbuffer = malloc(sizeof(float) * width * height);
-    for (int i = 0; i < width*height; i++) {
-        zbuffer[i] = 0.5;
-    }
-
+    float light_move_amount = 0.05;
+    
     while(1) {
+        // Clear zbuffer
+        for (int i = 0; i < width*height; i++) {
+            zbuffer[i] = -FLT_MAX;
+        }
+
         gfx_color(255, 255, 255);
 
         #if RENDER_MODEL == 1
         for (int i = 0; i < m->face_count; i++) {
-
             // Get screen_coords
             Vec3f screen_coords[3];
             Vec3f world_coords[3];
@@ -202,8 +204,25 @@ int main(int argc, char** argv)
             }
         }
         #endif
-        c = gfx_wait();
-        if (c == 'q' || c == '\x1b') break;
+        gfx_flush();
+        int c = gfx_wait();
+        if (c == 'q' || c == '\x1b')
+            break;
+        else if (c == 'i')
+            light_dir.y += light_move_amount;
+        else if (c == 'k')
+            light_dir.y -= light_move_amount;
+        else if (c == 'j')
+            light_dir.x -= light_move_amount;
+        else if (c == 'l')
+            light_dir.x += light_move_amount;
+        else if (c == 'u')
+            light_dir.z -= light_move_amount;
+        else if (c == 'o')
+            light_dir.z += light_move_amount;
+        else if (c == 'r')
+            light_dir = starting_light_dir;
+        gfx_clear();
     }
 
     free(zbuffer);
