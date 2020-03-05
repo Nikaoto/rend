@@ -11,6 +11,10 @@ typedef struct Vec3 {
     double x, y, z;
 } Vec3;
 
+typedef struct Vec2 {
+    double x, y;
+} Vec2;
+
 typedef struct Vec3i {
     int x, y, z;
 } Vec3i;
@@ -37,6 +41,8 @@ typedef struct Model {
     int vertex_count;
     int** faces;
     int face_count;
+    Vec2* texture_vertices;
+    int texture_vertex_count;
 } Model;
 
 int is_num(char c);

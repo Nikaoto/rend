@@ -114,7 +114,7 @@ double string_to_double(char* s, int off, int len)
             break;
         }
     }
-    
+
     // Get whole part length
     int wlen = 0;
     while (s[off + wlen] != '.' && wlen != len) {
@@ -159,6 +159,7 @@ Model* parse_obj_file(char* filename)
     Model* m = malloc(sizeof(Model));
     m->vertex_count = 0;
     m->vertices = malloc(0);
+    m->texture_vertices = malloc(0);
     m->face_count = 0;
     m->faces = malloc(0);
 
@@ -186,6 +187,22 @@ Model* parse_obj_file(char* filename)
                 // Z
                 len = get_vert_coord_len(obj_string, col + row);
                 m->vertices[vindex].z = string_to_double(obj_string, col + row, len);
+                col += len + 1;
+            } else if (obj_string[row + col] == 't' && obj_string[row + (++col)] == ' ') {
+                col += 2; // Two spaces after 'vt'
+
+                // Add a texture vertex
+                m->texture_vertex_count++;
+                m->texture_vertices = realloc(m->texture_vertices,
+                                              sizeof(Vec2) * m->texture_vertex_count);
+                int tvindex = m->texture_vertex_count - 1;
+                // U
+                int len = get_vert_coord_len(obj_string, col + row);
+                m->texture_vertices[tvindex].x = string_to_double(obj_string, col + row, len);
+                col += len + 1;
+                // V
+                len = get_vert_coord_len(obj_string, col + row);
+                m->texture_vertices[tvindex].y = string_to_double(obj_string, col + row, len);
                 col += len + 1;
             }
         } else if (obj_string[row + col] == 'f')  {
@@ -220,16 +237,21 @@ Model* parse_obj_file(char* filename)
         }
     }
 
-/*
-    for (int i = 0; i < m->vertex_count; i++) {
-       printf("v %g %g %g\n", m->vertices[i].x, m->vertices[i].y, m->vertices[i].z);
-     }
-*/
+    /* Print vertices */
+    /* for (int i = 0; i < m->vertex_count; i++) { */
+    /*    printf("v %g %g %g\n", m->vertices[i].x, m->vertices[i].y, m->vertices[i].z); */
+    /*  } */
 
-/*    for (int i = 0; i < m->face_count; i++) {
-        printf("f %i %i %i\n", m->faces[i][0], m->faces[i][1], m->faces[i][2]);
-    }
-*/
+    /* Print faces */
+    /* for (int i = 0; i < m->face_count; i++) { */
+    /*     printf("f %i %i %i\n", m->faces[i][0], m->faces[i][1], m->faces[i][2]); */
+    /* } */
+
+    /* Print texture vertices */
+    /* for (int i = 0; i < m->texture_vertex_count; i++) { */
+    /*     printf("vt  %g %g\n", m->texture_vertices[i].x, m->texture_vertices[i].y); */
+    /* } */
+
     free(obj_string);
     return m;
 }
@@ -240,5 +262,6 @@ void free_model(Model* m) {
     }
     free(m->faces);
     free(m->vertices);
+    free(m->texture_vertices);
     free(m);
 }

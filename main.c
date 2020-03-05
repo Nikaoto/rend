@@ -204,6 +204,7 @@ int main(int argc, char** argv)
             }
         }
         #endif
+
         gfx_flush();
         int c = gfx_wait();
         if (c == 'q' || c == '\x1b')
