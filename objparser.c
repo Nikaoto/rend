@@ -1,59 +1,12 @@
-// Parses .obj files into a struct
+/* Parses .obj files into a struct */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <limits.h>
 #include "rend.h"
 #include "math.h"
-
-#define READ_BUF_SIZE 256
-
-char* read_obj_file(char* filename, int* size)
-{
-    char buf[READ_BUF_SIZE];
-
-    int fd = open(filename, O_RDONLY);
-    if (fd == -1) {
-        printf("Couldn't open %s\n", filename);
-        return 0;
-    }
-
-    struct stat st;
-    if (fstat(fd, &st) == -1) {
-        printf("fstat failed\n");
-        return 0;
-    }
-
-    size_t file_size = (size_t) st.st_size;
-    *size = file_size;
-    size_t bytes_read = read(fd, buf, READ_BUF_SIZE);
-    if (bytes_read == 0) {
-        printf("obj file %s empty\n", filename);
-        return 0;
-    }
-    if (bytes_read < 0) {
-        printf("Couldn't read %s\n", filename);
-        return 0;
-    }
-
-    size_t total_read = 0;
-    char* file_string = malloc(file_size + 1);
-
-    do {
-        for (size_t i = 0; i < bytes_read; i++) {
-            file_string[total_read + i] = buf[i];
-        }
-        total_read += bytes_read;
-        bytes_read = read(fd, buf, READ_BUF_SIZE);
-    } while(bytes_read > 0);
-    file_string[file_size] = '\0';
-
-    return file_string;
-}
+#include "file.h"
 
 int get_vert_coord_len(char *s, int off)
 {
@@ -150,8 +103,8 @@ double string_to_double(char* s, int off, int len)
 
 Model* parse_obj_file(char* filename)
 {
-    int file_length = 0;
-    char* obj_string = read_obj_file(filename, &file_length);
+    size_t file_length = 0;
+    char* obj_string = load_file(filename, &file_length);
     if (obj_string == NULL) {
         printf("obj_string is null\n");
         return NULL;

@@ -48,4 +48,4 @@ typedef struct Model {
 int is_num(char c);
 double power(double n, int p);
 
-#endif // REND_MATH_H_
+#endif /* REND_MATH_H_ */

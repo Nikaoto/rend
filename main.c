@@ -4,6 +4,7 @@
 #include "rend.h"
 #include "gfx.h"
 #include "objparser.h"
+#include "tgaparser.h"
 #include "math.h"
 
 void line(int x0, int y0, int x1, int y1)
@@ -152,20 +153,28 @@ void triangle(Vec3f a, Vec3f b, Vec3f c, float* zbuf)
 }
 
 char* obj_file_name = "african_head.obj";
+char* texture_file_name = "african_head_diffuse.tga";
 
 int main(int argc, char** argv)
 {
     if (argc > 1) {
         obj_file_name = argv[1];
     }
+    if (argc > 2) {
+        texture_file_name = argv[2];
+    }
 
     int width = WINDOW_WIDTH;
     int height = WINDOW_HEIGHT;
     gfx_open(width, height, "rend");
 
-    #if RENDER_MODEL == 1
     Model* m = parse_obj_file(obj_file_name);
-    #endif
+    if (m == NULL) {
+        printf("Parsing %s failed\n", obj_file_name);
+        return 1;
+    }
+
+    Bitmap* texture = parse_tga_file(texture_file_name);
 
     Vec3f starting_light_dir = { .x = 0, .y = 0, .z = 1 };
     Vec3f light_dir = starting_light_dir;
@@ -180,7 +189,6 @@ int main(int argc, char** argv)
 
         gfx_color(255, 255, 255);
 
-        #if RENDER_MODEL == 1
         for (int i = 0; i < m->face_count; i++) {
             // Get screen_coords
             Vec3f screen_coords[3];
@@ -203,7 +211,6 @@ int main(int argc, char** argv)
                 triangle(screen_coords[0], screen_coords[1], screen_coords[2], zbuffer);
             }
         }
-        #endif
 
         gfx_flush();
         int c = gfx_wait();
@@ -224,13 +231,23 @@ int main(int argc, char** argv)
         else if (c == 'r')
             light_dir = starting_light_dir;
         gfx_clear();
+
+        /* for (int y = 0; y < texture->height; y++) { */
+        /*     for (int x = 0; x < texture->width; x++) { */
+        /*         gfx_color( */
+        /*             texture->data[(x + y*texture->width)*3 ], */
+        /*             texture->data[(x + y*texture->width)*3 + 1], */
+        /*             texture->data[(x + y*texture->width)*3 + 2]); */
+        /*         gfx_point(x, texture->height - y); */
+        /*     } */
+        /* } */
+        /* gfx_wait(); */
     }
 
     free(zbuffer);
-
-    #if RENDER_MODEL == 1
+    free(texture->data);
+    free(texture);
     free_model(m);
-    #endif
 
     return 0;
 }

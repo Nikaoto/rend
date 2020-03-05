@@ -1,7 +1,7 @@
 CFLAGS:= -Wall -O2 -I/usr/X11R6/include
 LINKFLAGS:= -L/usr/X11R6/lib -lX11 -lm
-OBJS:= main.o math.o objparser.o gfx.o
-HEADS:= rend.h math.h objparser.h gfx.h
+OBJS:= main.o file.o math.o objparser.o tgaparser.o  gfx.o
+HEADS:= rend.h file.h math.h objparser.h tgaparser.h  gfx.h
 
 rend: $(OBJS)
 	gcc -o $@ $^ $(CFLAGS) $(LINKFLAGS)
