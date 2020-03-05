@@ -3,10 +3,13 @@ LINKFLAGS:= -L/usr/X11R6/lib -lX11 -lm
 OBJS:= main.o math.o objparser.o gfx.o
 HEADS:= rend.h math.h objparser.h gfx.h
 
-all: rend
-
 rend: $(OBJS)
 	gcc -o $@ $^ $(CFLAGS) $(LINKFLAGS)
+
+all: rend tgaview
+
+tgaview:
+	cd tgaview && make
 
 %.o: %.c $(HEADS)
 	gcc $(CFLAGS) -c -o $@ $<
@@ -20,4 +23,4 @@ prof: rend_g
 clean:
 	rm -rf *.s *.o rend_g*
 
-.PHONY: all prof clean
+.PHONY: all prof clean tgaview
