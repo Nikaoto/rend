@@ -39,6 +39,13 @@ void line(int x0, int y0, int x1, int y1)
     }
 }
 
+inline void triangle_wireframe(Vec2i v[3])
+{
+    line(v[0].x, v[0].y, v[1].x, v[1].y);
+    line(v[1].x, v[1].y, v[2].x, v[2].y);
+    line(v[2].x, v[2].y, v[0].x, v[0].y);
+}
+
 void quad(int x0, int y0, int x1, int y1)
 {
     line(x0, y0, x1, y0);
@@ -47,14 +54,23 @@ void quad(int x0, int y0, int x1, int y1)
     line(x0, y1, x0, y0);
 }
 
-void triangle(Vec3f a, Vec3f b, Vec3f c, float* zbuf)
+void triangle(Vec3f a, Vec3f b, Vec3f c, float* zbuf, Bitmap* tex, Vec2i tex_coords[3])
 {
     if (a.y == b.y && a.y == c.y) return;
 
-    // Sort by y coord ascending (a.y < b.y< c.y)
-    if (a.y > b.y) SWAP(a, b, Vec3f);
-    if (a.y > c.y) SWAP(a, c, Vec3f);
-    if (b.y > c.y) SWAP(b, c, Vec3f);
+    // Sort by y coord ascending (a.y < b.y < c.y)
+    if (a.y > b.y) {
+        SWAP(a, b, Vec3f);
+        SWAP(tex_coords[0], tex_coords[1], Vec2i);
+    }
+    if (a.y > c.y) {
+        SWAP(a, c, Vec3f);
+        SWAP(tex_coords[0], tex_coords[2], Vec2i);
+    }
+    if (b.y > c.y) {
+        SWAP(b, c, Vec3f);
+        SWAP(tex_coords[1], tex_coords[2], Vec2i);
+    }
 
     float ac_dx = c.x - a.x;
     float ac_dy = c.y - a.y;
@@ -95,6 +111,7 @@ void triangle(Vec3f a, Vec3f b, Vec3f c, float* zbuf)
                 float z = startz + dz * (float) ((x - startx) / dx);
                 int zi = (int)(x + y * WINDOW_WIDTH);
                 if (z > zbuf[zi]) {
+                    //gfx_color(tex_coords[]);
                     gfx_point(x, y);
                     zbuf[zi] = z;
                 }
@@ -152,6 +169,32 @@ void triangle(Vec3f a, Vec3f b, Vec3f c, float* zbuf)
     #endif
 }
 
+/* void draw_model(Model* m, Bitmap* t, Vec2f* scale, char* zbuf, Vec3f* light) */
+/* { */
+/*     for (int i = 0; i < m->face_count; i++) { */
+/*         // Get screen_coords */
+/*         Vec3f screen_coords[3]; */
+/*         Vec3f world_coords[3]; */
+/*         for (int j = 0; j < 3; j++) { */
+/*             Vec3 v = m->vertices[m->faces[i][j]]; */
+/*             world_coords[j] = (Vec3f) { .x = v.x, .y = v.y, .z = v.z }; */
+/*             screen_coords[j].x = (v.x + 1.) * scale->x; */
+/*             screen_coords[j].y = (v.y + 1.) * scale->y; */
+/*             screen_coords[j].z = v.z + 1.0; */
+/*         } */
+
+/*         // Get color of the face */
+/*         Vec3f side1 = sub_vec3f(world_coords[1], world_coords[0]); */
+/*         Vec3f side2 = sub_vec3f(world_coords[2], world_coords[0]); */
+/*         Vec3f normal = normalize(cross_prod(side1, side2)); */
+/*         float intensity = dot_prod(normal, light_dir); */
+/*         if (intensity > 0) { */
+/*             gfx_color(intensity * 255, intensity * 255, intensity * 255); */
+/*             triangle(screen_coords[0], screen_coords[1], screen_coords[2], zbuffer); */
+/*         } */
+/*     } */
+/* } */
+
 char* obj_file_name = "african_head.obj";
 char* texture_file_name = "african_head_diffuse.tga";
 
@@ -189,28 +232,55 @@ int main(int argc, char** argv)
 
         gfx_color(255, 255, 255);
 
-        for (int i = 0; i < m->face_count; i++) {
-            // Get screen_coords
-            Vec3f screen_coords[3];
-            Vec3f world_coords[3];
-            for (int j = 0; j < 3; j++) {
-                Vec3 v = m->vertices[m->faces[i][j]];
-                world_coords[j] = (Vec3f) { .x = v.x, .y = v.y, .z = v.z };
-                screen_coords[j].x = (v.x + 1.) * width/2;
-                screen_coords[j].y = height - (v.y + 1.) * height/2;
-                screen_coords[j].z = v.z;
-            }
-
-            // Get color of the face
-            Vec3f side1 = sub_vec3f(world_coords[1], world_coords[0]);
-            Vec3f side2 = sub_vec3f(world_coords[2], world_coords[0]);
-            Vec3f normal = normalize(cross_prod(side1, side2));
-            float intensity = dot_prod(normal, light_dir);
-            if (intensity > 0) {
-                gfx_color(intensity * 255, intensity * 255, intensity * 255);
-                triangle(screen_coords[0], screen_coords[1], screen_coords[2], zbuffer);
+        //draw_model(m, texture, zbuffer, &light_dir);
+        for (int y = 0; y < texture->height; y++) {
+            for (int x = 0; x < texture->width; x++) {
+                gfx_color(
+                    texture->data[(x + y*texture->width)*3 ],
+                    texture->data[(x + y*texture->width)*3 + 1],
+                    texture->data[(x + y*texture->width)*3 + 2]);
+                gfx_point(x, y);
             }
         }
+
+        for (int i = 0; i < m->face_count; i++) {
+            Vec2i texture_coords[3];
+            for (int j = 0; j < 3; j++) {
+                Vec2 vt = m->texture_vertices[m->faces[i].texture_vertex_index[j]];
+                texture_coords[j].x = vt.x * texture->width;
+                texture_coords[j].y = vt.y * texture->height;
+            }
+            gfx_color(255, 255, 255);
+            triangle_wireframe(texture_coords);
+        }
+
+        /* for (int i = 0; i < m->face_count; i++) { */
+        /*     // Get screen_coords */
+        /*     Vec3f screen_coords[3]; */
+        /*     Vec3f world_coords[3]; */
+        /*     Vec2i tex_coords[3]; */
+        /*     for (int j = 0; j < 3; j++) { */
+        /*         Vec3 v = m->vertices[m->faces[i].vertex_index[j]]; */
+        /*         Vec2 vt = m->texture_vertices[m->faces[i].texture_vertex_index[j]]; */
+        /*         world_coords[j] = (Vec3f) { .x = v.x, .y = v.y, .z = v.z }; */
+        /*         screen_coords[j].x = (v.x + 1.) * width/2; */
+        /*         screen_coords[j].y = height - (v.y + 1.) * height/2; */
+        /*         screen_coords[j].z = v.z + 1.; */
+        /*         tex_coords[j].x = vt.x * texture->width; */
+        /*         tex_coords[j].y = vt.y * texture->height; */
+        /*     } */
+
+            // Get color of the face
+            /* Vec3f side1 = sub_vec3f(world_coords[1], world_coords[0]); */
+            /* Vec3f side2 = sub_vec3f(world_coords[2], world_coords[0]); */
+            /* Vec3f normal = normalize(cross_prod(side1, side2)); */
+            /* float intensity = dot_prod(normal, light_dir); */
+            /* if (intensity > 0) { */
+            /*     gfx_color(intensity * 255, intensity * 255, intensity * 255); */
+            /*     triangle(screen_coords[0], screen_coords[1], screen_coords[2], zbuffer); */
+            /* } */
+            /* triangle(screen_coords[0], screen_coords[1], screen_coords[2], zbuffer, texture, tex_coords); */
+        /* } */
 
         gfx_flush();
         int c = gfx_wait();
@@ -231,17 +301,6 @@ int main(int argc, char** argv)
         else if (c == 'r')
             light_dir = starting_light_dir;
         gfx_clear();
-
-        /* for (int y = 0; y < texture->height; y++) { */
-        /*     for (int x = 0; x < texture->width; x++) { */
-        /*         gfx_color( */
-        /*             texture->data[(x + y*texture->width)*3 ], */
-        /*             texture->data[(x + y*texture->width)*3 + 1], */
-        /*             texture->data[(x + y*texture->width)*3 + 2]); */
-        /*         gfx_point(x, texture->height - y); */
-        /*     } */
-        /* } */
-        /* gfx_wait(); */
     }
 
     free(zbuffer);

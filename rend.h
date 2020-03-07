@@ -8,7 +8,7 @@
 
 #define WIREFRAME     0
 #define RENDER_MODEL  1
-#define WINDOW_WIDTH  600
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH  1024
+#define WINDOW_HEIGHT 1024
 
 #endif // REND_H_

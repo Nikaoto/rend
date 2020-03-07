@@ -1,6 +1,8 @@
 #ifndef TGA_PARSER_H_
 #define TGA_PARSER_H_
 
+#include "math.h"
+
 typedef unsigned char uchar;
 
 #define TGA_HEADER_SIZE   18
@@ -19,12 +21,6 @@ typedef struct Tga_Header {
     char bits_per_pixel;
     char image_descriptor;
 } Tga_Header;
-
-typedef struct Bitmap {
-    char* data;
-    int width;
-    int height;
-} Bitmap;
 
 /* Returns RGB bitmap */
 Bitmap* parse_tga_file(char* file_path);

@@ -23,6 +23,10 @@ typedef struct Vec3f {
     float x, y, z;
 } Vec3f;
 
+typedef struct Vec2f {
+    float x, y;
+} Vec2f;
+
 typedef struct Vec2i {
     int x, y;
 } Vec2i;
@@ -36,14 +40,26 @@ Vec3f normalize(Vec3f a);
 float dot_prod(Vec3f a, Vec3f b);
 Vec3f cross_prod(Vec3f a, Vec3f b);
 
+typedef struct Face {
+    int vertex_index[3];
+    int texture_vertex_index[3];
+    /* int normal_vertex_index[3]; */
+} Face;
+
 typedef struct Model {
     Vec3* vertices;
     int vertex_count;
-    int** faces;
+    Face* faces;
     int face_count;
     Vec2* texture_vertices;
     int texture_vertex_count;
 } Model;
+
+typedef struct Bitmap {
+    char* data;
+    int width;
+    int height;
+} Bitmap;
 
 int is_num(char c);
 double power(double n, int p);

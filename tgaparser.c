@@ -3,6 +3,7 @@
 #include "tgaparser.h"
 #include "file.h"
 #include "rend.h"
+#include "math.h"
 
 #define loghex(x) printf(#x" = %02X\n", x);
 #define dumpheader(h) {\

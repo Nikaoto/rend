@@ -163,26 +163,41 @@ Model* parse_obj_file(char* filename)
             if (obj_string[row + col] == ' ') {
                 col++;
 
-                // Add face
+                /* Add face */
                 m->face_count++;
-                m->faces = realloc(m->faces, sizeof(size_t) * m->face_count);
+                m->faces = realloc(m->faces, sizeof(Face) * m->face_count);
                 int findex = m->face_count - 1;
-                m->faces[findex] = malloc(sizeof(int[3]));
-                // Vert1 index
-                int len = get_num_len(obj_string, col + row, "/ ");
-                m->faces[findex][0] = get_next_uint(obj_string, col + row, len) - 1;
+
+                /* Vertex 0 index */
+                int len = get_num_len(obj_string, col + row, "/");
+                m->faces[findex].vertex_index[0] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
-                // Move to next triplet
-                col += get_num_len(obj_string, col + row, " ") + 1;
-                // Vert2 index
-                len = get_num_len(obj_string, col + row, "/ ");
-                m->faces[findex][1] = get_next_uint(obj_string, col + row, len) - 1;
+                /* Texure vertex 0 index */
+                len = get_num_len(obj_string, col + row, "/");
+                m->faces[findex].texture_vertex_index[0] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
-                // Move to next triplet
+
+                /* Move to next triplet */
                 col += get_num_len(obj_string, col + row, " ") + 1;
-                // Vert3 index
-                len = get_num_len(obj_string, col + row, "/ ");
-                m->faces[findex][2] = get_next_uint(obj_string, col + row, len) - 1;
+
+                /* Vertex 1 index */
+                len = get_num_len(obj_string, col + row, "/");
+                m->faces[findex].vertex_index[1] = get_next_uint(obj_string, col + row, len) - 1;
+                col += len + 1;
+                /* Texture vertex 1 index */
+                len = get_num_len(obj_string, col + row, "/");
+                m->faces[findex].texture_vertex_index[1] = get_next_uint(obj_string, col + row, len) - 1;
+
+                /* Move to next triplet */
+                col += get_num_len(obj_string, col + row, " ") + 1;
+
+                /* Vertex 2 index */
+                len = get_num_len(obj_string, col + row, "/");
+                m->faces[findex].vertex_index[2] = get_next_uint(obj_string, col + row, len) - 1;
+                col += len + 1;
+                /* Texture vertex 2 index */
+                len = get_num_len(obj_string, col + row, "/");
+                m->faces[findex].texture_vertex_index[2] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
             }
         } else {
@@ -197,7 +212,10 @@ Model* parse_obj_file(char* filename)
 
     /* Print faces */
     /* for (int i = 0; i < m->face_count; i++) { */
-    /*     printf("f %i %i %i\n", m->faces[i][0], m->faces[i][1], m->faces[i][2]); */
+    /*     printf("f %i/%i/ %i/%i/ %i/%i/\n",  */
+    /*            m->faces[i].vertex_index[0], m->faces[i].texture_vertex_index[0], */
+    /*            m->faces[i].vertex_index[1], m->faces[i].texture_vertex_index[1], */
+    /*            m->faces[i].vertex_index[2], m->faces[i].texture_vertex_index[2]); */
     /* } */
 
     /* Print texture vertices */
@@ -210,9 +228,9 @@ Model* parse_obj_file(char* filename)
 }
 
 void free_model(Model* m) {
-    for (int i = 0; i < m->face_count; i++) {
-        free(m->faces[i]);
-    }
+    /* for (int i = 0; i < m->face_count; i++) { */
+    /*     free(m->faces[i]); */
+    /* } */
     free(m->faces);
     free(m->vertices);
     free(m->texture_vertices);
