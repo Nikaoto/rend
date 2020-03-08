@@ -5,7 +5,11 @@
 
 int randint(int n);
 int abs(int n);
+int max(int a, int b);
+float maxf(float a, float b);
 float absf(float f);
+float lerp(float a, float b, float amount);
+//float lerpi(int a, int b, float amount);
 
 typedef struct Vec3 {
     double x, y, z;

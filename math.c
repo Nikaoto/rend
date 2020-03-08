@@ -25,6 +25,16 @@ float absf(float f)
     return (f < 0) ? -f : f;
 }
 
+int max(int a, int b)
+{
+    return (a > b) ? a : b;
+}
+
+float maxf(float a, float b)
+{
+    return (a > b) ? a : b;
+}
+
 int is_num(char c)
 {
     return c >= '0' && c <= '9';
@@ -45,6 +55,11 @@ double power(double n, int p)
     while (p-- > 0)
         ans *= n;
     return ans;
+}
+
+float lerp(float a, float b, float amount)
+{
+    return a + (b - a) * amount;
 }
 
 Vec2i new_Vec2i(int x, int y)
