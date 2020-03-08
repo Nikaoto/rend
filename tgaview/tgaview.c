@@ -113,25 +113,20 @@ void load_header(Tga_Header* header, char* tga_string)
    NOTE: only works RGB and RGBA formats
    TODO: add grayscale format compatibility
  */
-char* tga_to_bitmap(char* tga_string, size_t str_length, Tga_Header* header)
+void run_len_decode(char* bitmap, size_t bitmap_len, char* tga_string, int bytes_per_pixel)
 {
-    int bytes_per_pixel = header->bits_per_pixel / 8;
-    int alpha_included = (bytes_per_pixel > 3);
-    tga_string += TGA_HEADER_SIZE;
-    size_t bitmap_length = header->width * header->height * bytes_per_pixel;
-    char* bitmap = malloc(bitmap_length);
     size_t i = 0;
-    while (i < bitmap_length) {
+    while (i < bitmap_len) {
         uchar packet_header = (uchar) *tga_string++;
         if (packet_header < 128) {
             /* Raw packet */
             int body_size = packet_header + 1;
             for (int j = 0; j < body_size; j++) {
-                char b = *tga_string++;
-                char g = *tga_string++;
-                char r = *tga_string++;
+                char b = *(tga_string++);
+                char g = *(tga_string++);
+                char r = *(tga_string++);
                 /* Ignore alpha channel if included */
-                if (alpha_included)
+                if (bytes_per_pixel > 3)
                     tga_string++;
                 bitmap[i++] = r;
                 bitmap[i++] = g;
@@ -140,11 +135,11 @@ char* tga_to_bitmap(char* tga_string, size_t str_length, Tga_Header* header)
         } else {
             /* Run-length packet */
             int run_length = packet_header - 128 + 1;
-            char b = *tga_string++;
-            char g = *tga_string++;
-            char r = *tga_string++;
+            char b = *(tga_string++);
+            char g = *(tga_string++);
+            char r = *(tga_string++);
             /* Ignore alpha channel if included */
-            if (alpha_included)
+            if (bytes_per_pixel > 3)
                 tga_string++;
             /* NOTE: we reverse BGR order so we get RGB */
             for (int j = 0; j < run_length; j++) {
@@ -154,8 +149,21 @@ char* tga_to_bitmap(char* tga_string, size_t str_length, Tga_Header* header)
             }            
         }
     }
+}
 
-    return bitmap;
+void unmapped_decode(char* bitmap, size_t bitmap_len, char* tga_string, int bytes_per_pixel)
+{
+    size_t i = 0;
+    while (i < bitmap_len) {
+        char b = *(tga_string++);
+        char g = *(tga_string++);
+        char r = *(tga_string++);
+        if (bytes_per_pixel > 3)
+            tga_string++;
+        bitmap[i++] = r;
+        bitmap[i++] = g;
+        bitmap[i++] = b;
+    }
 }
 
 int main(int argc, char** argv)
@@ -170,6 +178,7 @@ int main(int argc, char** argv)
 
     size_t str_length;
     char* tga_string = load_file(file_path, &str_length);
+    char* tga_string_for_free = tga_string;
 
     /* Get header */
     Tga_Header header;
@@ -181,8 +190,20 @@ int main(int argc, char** argv)
     int width = header.width;
     gfx_open(width, height, file_path);
 
+    /* Allocate memory for bitmap
+       TODO: remove 3 byte hardcode and replace with bytes_per_pixel */
+    int bytes_per_pixel = header.bits_per_pixel / 8;
+    size_t bitmap_len = header.width * header.height * 3;
+    char* bitmap = malloc(bitmap_len);
+
+    /* Push tga_string pointer to start of data */
+    tga_string += TGA_HEADER_SIZE;
+
     /* Load image into bitmap */
-    char* bitmap = tga_to_bitmap(tga_string, str_length, &header);
+    if (header.data_type_code == 10)
+        run_len_decode(bitmap, bitmap_len, tga_string, bytes_per_pixel);
+    else
+        unmapped_decode(bitmap, bitmap_len, tga_string, bytes_per_pixel);
 
     while (1) {
         gfx_color(255, 255, 255);
@@ -203,7 +224,7 @@ int main(int argc, char** argv)
         if (c == 'q' || c == '\x1b') break;
     }
 
-    free(tga_string);
+    free(tga_string_for_free);
     free(bitmap);
 
     return 0;
