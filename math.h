@@ -60,9 +60,8 @@ typedef struct Model {
 } Model;
 
 typedef struct Bitmap {
-    char* data;
-    int width;
-    int height;
+    unsigned char* data;
+    int width, height;
 } Bitmap;
 
 int is_num(char c);
