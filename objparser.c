@@ -121,9 +121,10 @@ Model* parse_obj_file(char* filename)
     size_t col = 0;
     while (row + col < file_length) {
         if (obj_string[row + col] == 'v') {
-            col++;
-            if (obj_string[row + col] == ' ') {
-                col++;
+            if (obj_string[row + (++col)] == ' ') {
+                // Skip spaces
+                while (obj_string[row + col] == ' ')
+                    col++;
 
                 // Add a vertex
                 m->vertex_count++;
@@ -141,22 +142,26 @@ Model* parse_obj_file(char* filename)
                 len = get_vert_coord_len(obj_string, col + row);
                 m->vertices[vindex].z = string_to_double(obj_string, col + row, len);
                 col += len + 1;
-            } else if (obj_string[row + col] == 't' && obj_string[row + (++col)] == ' ') {
-                col += 2; // Two spaces after 'vt'
+            } else if (obj_string[row + col] == 't') {
+                if (obj_string[row + (++col)] == ' ') {
+                    // Skip spaces
+                    while (obj_string[row + col] == ' ')
+                        col++;
 
-                // Add a texture vertex
-                m->texture_vertex_count++;
-                m->texture_vertices = realloc(m->texture_vertices,
-                                              sizeof(Vec2) * m->texture_vertex_count);
-                int tvindex = m->texture_vertex_count - 1;
-                // U
-                int len = get_vert_coord_len(obj_string, col + row);
-                m->texture_vertices[tvindex].x = string_to_double(obj_string, col + row, len);
-                col += len + 1;
-                // V
-                len = get_vert_coord_len(obj_string, col + row);
-                m->texture_vertices[tvindex].y = string_to_double(obj_string, col + row, len);
-                col += len + 1;
+                    // Add a texture vertex
+                    m->texture_vertex_count++;
+                    m->texture_vertices = realloc(m->texture_vertices,
+                                                  sizeof(Vec2) * m->texture_vertex_count);
+                    int tvindex = m->texture_vertex_count - 1;
+                    // U
+                    int len = get_vert_coord_len(obj_string, col + row);
+                    m->texture_vertices[tvindex].x = string_to_double(obj_string, col + row, len);
+                    col += len + 1;
+                    // V
+                    len = get_vert_coord_len(obj_string, col + row);
+                    m->texture_vertices[tvindex].y = string_to_double(obj_string, col + row, len);
+                    col += len + 1;
+                }
             }
         } else if (obj_string[row + col] == 'f')  {
             col++;
@@ -169,11 +174,11 @@ Model* parse_obj_file(char* filename)
                 int findex = m->face_count - 1;
 
                 /* Vertex 0 index */
-                int len = get_num_len(obj_string, col + row, "/");
+                int len = get_num_len(obj_string, col + row, "/ ");
                 m->faces[findex].vertex_index[0] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
                 /* Texure vertex 0 index */
-                len = get_num_len(obj_string, col + row, "/");
+                len = get_num_len(obj_string, col + row, "/ ");
                 m->faces[findex].texture_vertex_index[0] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
 
@@ -181,22 +186,22 @@ Model* parse_obj_file(char* filename)
                 col += get_num_len(obj_string, col + row, " ") + 1;
 
                 /* Vertex 1 index */
-                len = get_num_len(obj_string, col + row, "/");
+                len = get_num_len(obj_string, col + row, "/ ");
                 m->faces[findex].vertex_index[1] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
                 /* Texture vertex 1 index */
-                len = get_num_len(obj_string, col + row, "/");
+                len = get_num_len(obj_string, col + row, "/ ");
                 m->faces[findex].texture_vertex_index[1] = get_next_uint(obj_string, col + row, len) - 1;
 
                 /* Move to next triplet */
                 col += get_num_len(obj_string, col + row, " ") + 1;
 
                 /* Vertex 2 index */
-                len = get_num_len(obj_string, col + row, "/");
+                len = get_num_len(obj_string, col + row, "/ ");
                 m->faces[findex].vertex_index[2] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
                 /* Texture vertex 2 index */
-                len = get_num_len(obj_string, col + row, "/");
+                len = get_num_len(obj_string, col + row, "/ ");
                 m->faces[findex].texture_vertex_index[2] = get_next_uint(obj_string, col + row, len) - 1;
                 col += len + 1;
             }
@@ -235,4 +240,16 @@ void free_model(Model* m) {
     free(m->vertices);
     free(m->texture_vertices);
     free(m);
+}
+
+void flip_vertices_vertically(Model* m)
+{
+    for (int i = 0; i < m->vertex_count; i++)
+        m->vertices[i].y = -m->vertices[i].y;
+}
+
+void flip_texture_vertices_vertically(Model* m)
+{
+    for (int i = 0; i < m->texture_vertex_count; i++)
+        m->texture_vertices[i].y = 1.f - m->texture_vertices[i].y;
 }
