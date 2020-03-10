@@ -40,18 +40,18 @@ void load_header(Tga_Header* header, char* tga_string)
     header->image_descriptor = tga_string[17];
 }
 
-void run_len_decode(char* bmp, size_t bmp_len, char* tga_string, int bytes_per_pixel)
+void run_len_decode(unsigned char* bmp, size_t bmp_len, char* tga_string, int bytes_per_pixel)
 {
     size_t i = 0;
     while (i < bmp_len) {
-        uchar packet_header = (uchar) *tga_string++;
+        unsigned char packet_header = (unsigned char) *tga_string++;
         if (packet_header < 128) {
             /* Raw packet */
             int body_size = packet_header + 1;
             for (int j = 0; j < body_size; j++) {
-                char b = *(tga_string++);
-                char g = *(tga_string++);
-                char r = *(tga_string++);
+                unsigned char b = *(tga_string++);
+                unsigned char g = *(tga_string++);
+                unsigned char r = *(tga_string++);
                 /* Ignore alpha channel if included */
                 if (bytes_per_pixel > 3)
                     tga_string++;
@@ -62,9 +62,9 @@ void run_len_decode(char* bmp, size_t bmp_len, char* tga_string, int bytes_per_p
         } else {
             /* Run-length packet */
             int run_length = packet_header - 128 + 1;
-            char b = *(tga_string++);
-            char g = *(tga_string++);
-            char r = *(tga_string++);
+            unsigned char b = *(tga_string++);
+            unsigned char g = *(tga_string++);
+            unsigned char r = *(tga_string++);
             /* Ignore alpha channel if included */
             if (bytes_per_pixel > 3)
                 tga_string++;
@@ -78,13 +78,13 @@ void run_len_decode(char* bmp, size_t bmp_len, char* tga_string, int bytes_per_p
     }
 }
 
-void unmapped_decode(char* bmp, size_t bmp_len, char* tga_string, int bytes_per_pixel)
+void unmapped_decode(unsigned char* bmp, size_t bmp_len, char* tga_string, int bytes_per_pixel)
 {
     size_t i = 0;
     while (i < bmp_len) {
-        char b = *(tga_string++);
-        char g = *(tga_string++);
-        char r = *(tga_string++);
+        unsigned char b = *(tga_string++);
+        unsigned char g = *(tga_string++);
+        unsigned char r = *(tga_string++);
         if (bytes_per_pixel > 3)
             tga_string++;
         bmp[i++] = r;

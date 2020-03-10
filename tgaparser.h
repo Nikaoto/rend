@@ -3,8 +3,6 @@
 
 #include "math.h"
 
-typedef unsigned char uchar;
-
 #define TGA_HEADER_SIZE   18
 
 typedef struct Tga_Header {
