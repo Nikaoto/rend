@@ -7,7 +7,7 @@
 #include "tgaparser.h"
 #include "math.h"
 
-int wireframe = 0;
+int wireframe = 1;
 
 void line(int x0, int y0, int x1, int y1)
 {
@@ -161,7 +161,7 @@ void triangle_(Vec3f a, Vec3f b, Vec3f c, float* zbuf)
     #endif
 }
 
-void triangle(Vec3f v[3], Vec2i vt[3], Bitmap* tex, float* zbuf, float intensity)
+/*void triangle_full(Vec3f v[3], Vec2i vt[3], Bitmap* tex, float* zbuf, float intensity)
 {
     Vec3f* a = v;
     Vec3f* b = v + 1;
@@ -214,12 +214,14 @@ void triangle(Vec3f v[3], Vec2i vt[3], Bitmap* tex, float* zbuf, float intensity
             SWAP(ac_k, ab_k, float);
             swapped = 1;
         }
+
         // Swap so startz <= endz
         int swapped_zk = 0;
         if (ac_zk > ab_zk) {
             SWAP(ac_zk, ab_zk, float);
             swapped_zk = 1;
         }
+
         // Swap so start_tx <= end_tx
         int swapped_tk = 0;
         if (ac_t_k > ab_t_k) {
@@ -248,9 +250,9 @@ void triangle(Vec3f v[3], Vec2i vt[3], Bitmap* tex, float* zbuf, float intensity
                     int tex_yi = ty;
                     int tex_i = (tex_xi + tex_yi * tex->width) * 3;
                     gfx_color(
-                        tex->data[tex_i],
-                        tex->data[tex_i + 1],
-                        tex->data[tex_i + 2]);
+                        intensity * tex->data[tex_i],
+                        intensity * tex->data[tex_i + 1],
+                        intensity * tex->data[tex_i + 2]);
                     gfx_point(x, y);
                     zbuf[zi] = z;
                 }
@@ -313,17 +315,10 @@ void triangle(Vec3f v[3], Vec2i vt[3], Bitmap* tex, float* zbuf, float intensity
                 int zi = (int)(x + y * ZBUFFER_WIDTH);
                 if (z > zbuf[zi]) {
                     int tex_i = (tx + ty * tex->width) * 3;
-                    /* logi(dy); */
-                    /* logi(y_dist); */
-                    /* logi(start_tx); */
-                    /* logi(end_tx); */
-                    /* logi(tex_yi); */
-                    /* logi(ty); */
-                    /* logi(tx); */
                     gfx_color(
-                        tex->data[tex_i],
-                        tex->data[tex_i + 1],
-                        tex->data[tex_i + 2]);
+                        intensity * tex->data[tex_i],
+                        intensity * tex->data[tex_i + 1],
+                        intensity * tex->data[tex_i + 2]);
                     gfx_point(x, y);
                     zbuf[zi] = z;
                 }
@@ -331,12 +326,197 @@ void triangle(Vec3f v[3], Vec2i vt[3], Bitmap* tex, float* zbuf, float intensity
         }
     }
 
-if (wireframe) {
-    gfx_color(255, 0, 0);
-    line(a->x, a->y, c->x, c->y);
-    line(a->x, a->y, b->x, b->y);
-    line(b->x, b->y, c->x, c->y);
-}
+    if (wireframe) {
+        gfx_color(255, 0, 0);
+        line(a->x, a->y, c->x, c->y);
+        line(a->x, a->y, b->x, b->y);
+        line(b->x, b->y, c->x, c->y);
+    }
+}*/
+
+void triangle(Vec3f v[3], Vec2f vt[3], Bitmap* tex, float* zbuf, float intensity)
+{
+    int is_visible = intensity > 0.f;
+    intensity = 1.0f;
+
+    Vec3f* a = v;
+    Vec3f* b = v + 1;
+    Vec3f* c = v + 2;
+
+    if (a->y == b->y && a->y == c->y) return;
+    if (vt[0].y == vt[1].y && vt[0].y == vt[2].y) return;
+
+    // Sort by y coord ascending (a->y < b->y < c->y)
+    if (a->y > b->y) SWAP(a, b, Vec3f*);
+    if (a->y > c->y) SWAP(a, c, Vec3f*);
+    if (b->y > c->y) SWAP(b, c, Vec3f*);
+
+    // Sort by y coord ascending
+    if (vt[0].y > vt[1].y) SWAP(vt[0], vt[1], Vec2f);
+    if (vt[0].y > vt[2].y) SWAP(vt[0], vt[2], Vec2f);
+    if (vt[1].y > vt[2].y) SWAP(vt[1], vt[2], Vec2f);
+
+    float ac_dx = c->x - a->x;
+    float ac_dy = c->y - a->y;
+    float ac_dz = c->z - a->z;
+    float ac_k = (float) ac_dx / (float) ac_dy;
+    float ac_zk = (float) ac_dz / (float) ac_dy;
+
+    // For texture vertex interpolation
+    int ac_t_dx = vt[2].x - vt[0].x;
+    int ac_t_dy = vt[2].y - vt[0].y;
+    if (ac_t_dy == 0) ac_t_dy = 1;
+    float ac_t_k = (float) ac_t_dx / (float) ac_t_dy;
+
+    int ab_dx = b->x - a->x;
+    int ab_dy = b->y - a->y;
+    float ab_dz = b->z - a->z;
+
+    // Can't sweep region from AB to AC if it doesn't exist
+    if (ab_dy != 0) {
+        float ab_k = (float) ab_dx / (float) ab_dy;
+        float ab_zk = (float) ab_dz / (float) ab_dy;
+        int ab_t_dx = vt[1].x - vt[0].x;
+        int ab_t_dy = vt[1].y - vt[0].y;
+        if (ab_t_dy == 0) ab_t_dy = 1;
+        float ab_t_k = (float) ab_t_dx / (float) ab_t_dy;
+
+        // Swap so startx <= endx
+        int swapped = 0;
+        if (ac_k > ab_k) {
+            SWAP(ac_k, ab_k, float);
+            swapped = 1;
+        }
+
+        // Swap so startz <= endz
+        int swapped_zk = 0;
+        if (ac_zk > ab_zk) {
+            SWAP(ac_zk, ab_zk, float);
+            swapped_zk = 1;
+        }
+
+        // Swap so start_tx <= end_tx
+        int swapped_tk = 0;
+        if (ac_t_k > ab_t_k) {
+            SWAP(ac_t_k, ab_t_k, float);
+            swapped_tk = 1;
+        }
+
+
+        float ty = vt[0].y;
+        float ty_k = (float) ab_t_dy / (float) ab_dy;
+        float start_tx = vt[0].x;
+        float end_tx = vt[0].x;
+        float start_tx_add = ac_t_k * ty_k;
+        float end_tx_add = ab_t_k * ty_k;
+        float tx, tx_add;
+
+        for (int y = a->y; y <= b->y; y++) {
+            int dy = y - a->y;
+            float startz = a->z + dy * ac_zk;
+            float endz = a->z + dy * ab_zk;
+            float dz = endz - startz;
+            int startx = a->x + dy * ac_k;
+            int endx = a->x + dy * ab_k;
+            ty += ty_k;
+            start_tx += start_tx_add;
+            end_tx += end_tx_add;
+
+            tx = start_tx;
+            tx_add = (end_tx - start_tx) / (endx - startx + 1);
+            for (int x = startx; x <= endx; x += 1) {
+                int x_dist = endx - startx;
+                int dx = x - startx;
+                tx += tx_add;
+                float z = startz + dz * dx / (float) x_dist;
+                int zi = (int)(x + y * ZBUFFER_WIDTH);
+                if (z > zbuf[zi]) {
+                    int tex_i= ((int) tx + (int) ty * tex->width) * 3;
+                    /* logi((int) (tx * tex->width)); */
+                    /* logi((int) (ty * tex->width)); */
+                    /* logi(tex_i/3/1024); */
+                    gfx_color(
+                        intensity * tex->data[tex_i],
+                        intensity * tex->data[tex_i + 1],
+                        intensity * tex->data[tex_i + 2]);
+                    gfx_point(x, y);
+                    zbuf[zi] = z;
+                }
+            }
+        }
+        // Swap them back
+        if (swapped) SWAP(ac_k, ab_k, float);
+        if (swapped_zk) SWAP(ab_zk, ac_zk, float);
+        if (swapped_tk) SWAP(ac_t_k, ab_t_k, float);
+    }
+
+    int bc_dx = c->x - b->x;
+    int bc_dy = c->y - b->y;
+    float bc_dz = c->z - b->z;
+
+    // Can't sweep region from AC to BC if it doesn't exist
+    if (bc_dy != 0) {
+        float bc_k = (float) bc_dx / (float) bc_dy;
+        float bc_zk = (float) bc_dz / (float) bc_dy;
+        int bc_t_dx = vt[2].x - vt[1].x;
+        int bc_t_dy = vt[2].y - vt[1].y;
+        if (bc_t_dy == 0) bc_t_dy = 1;
+        float bc_t_k = (float) bc_t_dx / (float) bc_t_dy;
+
+        // If AC is to the right and BC is to the left
+        if (ac_k < bc_k) SWAP(ac_k, bc_k, float);
+        // Swap so that startz <= endz
+        if (ac_zk < bc_zk) SWAP(ac_zk, bc_zk, float);
+        // Swap so that start_tx <= end_tx
+        if (ac_t_k < bc_t_k) SWAP(ac_t_k, bc_t_k, float);
+
+        float ty = vt[2].y;
+        float ty_k = -((float) bc_t_dy / (float) bc_dy);
+        float start_tx = vt[2].x;
+        float end_tx = vt[2].x;
+        float start_tx_add = ac_t_k * ty_k;
+        float end_tx_add = bc_t_k * ty_k;
+        float tx, tx_add;
+        for (int y = c->y; y >= b->y; y--) {
+            int dy = y - c->y;
+            float startz = c->z + dy * ac_zk;
+            float endz = c->z + dy * bc_zk;
+            float z_dist = endz - startz;
+
+            int startx = c->x + dy * ac_k;
+            int endx = c->x + dy * bc_k;
+
+            start_tx += start_tx_add;
+            end_tx += end_tx_add;
+            ty += ty_k;
+            tx = start_tx;
+            tx_add = (end_tx - start_tx) / (endx - startx + 1);
+            for (int x = startx; x <= endx; x++) {
+                float x_dist = endx - startx;
+                float dx = x - startx;
+                //int tx = lerp(startx, endx, dx / x_dist);
+                tx += tx_add;
+                float z = startz + z_dist * dx / (float) x_dist;
+                int zi = (int)(x + y * ZBUFFER_WIDTH);
+                if (z > zbuf[zi]) {
+                    int tex_i = ((int) tx + (int) ty * tex->width) * 3;
+                    gfx_color(
+                        intensity * tex->data[tex_i],
+                        intensity * tex->data[tex_i + 1],
+                        intensity * tex->data[tex_i + 2]);
+                    gfx_point(x, y);
+                    zbuf[zi] = z;
+                }
+            }
+        }
+    }
+
+    if (wireframe) {
+        gfx_color(255, 0, 0);
+        line(a->x, a->y, c->x, c->y);
+        line(a->x, a->y, b->x, b->y);
+        line(b->x, b->y, c->x, c->y);
+    }
 }
 
 char* obj_file_name = "african_head.obj";
@@ -361,9 +541,15 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if (argc > 3 && argv[3][0] == 'f')
+        flip_vertices_vertically(m);
+
+    if (argc > 4 && argv[3][0] == 'f')
+        flip_texture_vertices_vertically(m);
+
     Bitmap* texture = parse_tga_file(texture_file_name);
 
-    Vec3f starting_light_dir = { .x = 0, .y = 0, .z = 1 };
+    Vec3f starting_light_dir = { .x = 0, .y = 0, .z = -1 };
     Vec3f light_dir = starting_light_dir;
     float *zbuffer = malloc(sizeof(float) * width * height);
     float light_move_amount = 0.05f;
@@ -376,7 +562,7 @@ int main(int argc, char** argv)
 
         gfx_color(255, 255, 255);
 
-        //draw_model(m, texture, zbuffer, &light_dir);
+        // Draw texture bitmap
         /* for (int y = 0; y < texture->height; y++) { */
         /*     for (int x = 0; x < texture->width; x++) { */
         /*         gfx_color( */
@@ -387,6 +573,7 @@ int main(int argc, char** argv)
         /*     } */
         /* } */
 
+        // Draw texturemap wireframe
         /* for (int i = 0; i < m->face_count; i++) { */
         /*     Vec2i texture_coords[3]; */
         /*     for (int j = 0; j < 3; j++) { */
@@ -402,16 +589,16 @@ int main(int argc, char** argv)
             // Get screen_coords
             Vec3f screen_coords[3];
             Vec3f world_coords[3];
-            Vec2i tex_coords[3];
+            Vec2f tex_coords[3];
             for (int j = 0; j < 3; j++) {
                 Vec3 v = m->vertices[m->faces[i].vertex_index[j]];
                 Vec2 vt = m->texture_vertices[m->faces[i].texture_vertex_index[j]];
                 world_coords[j] = (Vec3f) { .x = v.x, .y = v.y, .z = v.z };
                 screen_coords[j].x = (v.x + 1.f) * width/2;
-                screen_coords[j].y = height - (v.y + 1.f) * height/2;
+                screen_coords[j].y = (v.y + 1.f) * height/2;
                 screen_coords[j].z = v.z + 1.f;
-                tex_coords[j].x = vt.x * texture->width;
-                tex_coords[j].y = vt.y * texture->height;
+                tex_coords[j].x = vt.x * (texture->width - 1);
+                tex_coords[j].y = vt.y * (texture->height - 1);
             }
 
             // Get color of the face
@@ -419,31 +606,46 @@ int main(int argc, char** argv)
             Vec3f side2 = sub_vec3f(world_coords[2], world_coords[0]);
             Vec3f normal = normalize(cross_prod(side1, side2));
             float intensity = dot_prod(normal, light_dir);
-            if (intensity > 0) {
+            //if (intensity > 0) {
                 triangle(screen_coords, tex_coords, texture, zbuffer, intensity);
-            }
+            //}
         }
 
         gfx_flush();
-        int c = gfx_wait();
-        if (c == 'q' || c == '\x1b')
-            break;
-        else if (c == 'w')
-            wireframe = !wireframe;
-        else if (c == 'i')
-            light_dir.y += light_move_amount;
-        else if (c == 'k')
-            light_dir.y -= light_move_amount;
-        else if (c == 'j')
-            light_dir.x -= light_move_amount;
-        else if (c == 'l')
-            light_dir.x += light_move_amount;
-        else if (c == 'u')
-            light_dir.z -= light_move_amount;
-        else if (c == 'o')
-            light_dir.z += light_move_amount;
-        else if (c == 'r')
-            light_dir = starting_light_dir;
+        int c, quit = 0;
+        while ((c = gfx_wait())) {
+            quit = 0;
+            if (c == 'q' || c == '\x1b') {
+                quit = 1;
+                break;
+            } else if (c == 'w') {
+                wireframe = !wireframe;
+                break;
+            } else if (c == 'i') {
+                light_dir.y += light_move_amount;
+                break;
+            } else if (c == 'k') {
+                light_dir.y -= light_move_amount;
+                break;
+            } else if (c == 'j') {
+                light_dir.x -= light_move_amount;
+                break;
+            } else if (c == 'l') {
+                light_dir.x += light_move_amount;
+                break;
+            } else if (c == 'u') {
+                light_dir.z -= light_move_amount;
+                break;
+            } else if (c == 'o') {
+                light_dir.z += light_move_amount;
+                break;
+            } else if (c == 'r') {
+                light_dir = starting_light_dir;
+                break;
+            }
+        }
+
+        if (quit) break;
         gfx_clear();
     }
 
