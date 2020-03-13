@@ -21,6 +21,6 @@ typedef struct Tga_Header {
 } Tga_Header;
 
 /* Returns RGB bitmap */
-Bitmap* parse_tga_file(char* file_path);
+Bitmap* parse_tga_file(char* file_path, int flip_vertically);
 
 #endif /* TGA_PARSER_H_ */

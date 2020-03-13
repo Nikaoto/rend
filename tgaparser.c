@@ -98,7 +98,7 @@ void unmapped_decode(unsigned char* bmp, size_t bmp_len, char* tga_string, int b
    TODO: add grayscale format compatibility
    TODO: take x_origin and y_origin into account
  */
-Bitmap* parse_tga_file(char* file_path)
+Bitmap* parse_tga_file(char* file_path, int flip_vertically)
 {
     size_t tga_strlen;
     char* tga_string = load_file(file_path, &tga_strlen);
@@ -128,6 +128,25 @@ Bitmap* parse_tga_file(char* file_path)
         unmapped_decode(bmp->data, bmp_len, tga_string, bytes_per_pixel);
 
     free(tga_string_for_free);
+
+    /* Flip vertically */
+    if (flip_vertically) {
+        for (int i = 0; i < bmp->width; i++) {
+            for (int j = 0; j < bmp->height/2; j++) {
+                int curr_i = (i + j * bmp->width) * bytes_per_pixel;
+                int oppo_i = (i + (bmp->height - j) * bmp->width) * bytes_per_pixel;
+                unsigned char tmpr = bmp->data[curr_i];
+                unsigned char tmpg = bmp->data[curr_i + 1];
+                unsigned char tmpb = bmp->data[curr_i + 2];
+                bmp->data[curr_i] = bmp->data[oppo_i];
+                bmp->data[curr_i + 1] = bmp->data[oppo_i + 1];
+                bmp->data[curr_i + 2] = bmp->data[oppo_i + 2];
+                bmp->data[oppo_i] = tmpr;
+                bmp->data[oppo_i + 1] = tmpg;
+                bmp->data[oppo_i + 2] = tmpb;
+            }
+        }
+    }
 
     return bmp;
 }
