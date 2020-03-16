@@ -371,42 +371,39 @@ void triangle(Vec3f v[3], Vec2f vt[3], Bitmap* tex, float* zbuf, float intensity
     // AC slope
     float ac_dx = c->x - a->x;
     float ac_dy = c->y - a->y;
-    float ac_k;
-    if (ac_dy == 0.f)
-        ac_k = 0.f;
-    else
-        ac_k =  ac_dx / ac_dy;
+    float ac_dz = c->z - a->z;
+    float ac_k = (ac_dy == 0.f) ? 0.f : ac_dx / ac_dy;
+    float ac_z_k = (ac_dy == 0.f) ? 0.f : ac_dz / ac_dy;
 
     // AB slope
     float ab_dx = b->x - a->x;
     float ab_dy = b->y - a->y;
-    float ab_k;
-    if (ab_dy == 0.f)
-        ab_k = 0.f;
-    else
-        ab_k = ab_dx / ab_dy;
+    float ab_dz = b->z - a->z;
+    float ab_k = (ab_dy == 0.f) ? 0.f : ab_dx / ab_dy;
+    float ab_z_k = (ab_dy == 0.f) ? 0.f : ab_dz / ab_dy;
 
     // BC slope
     float bc_dx = c->x - b->x;
     float bc_dy = c->y - b->y;
-    float bc_k;
-    if (bc_dy == 0.f)
-        bc_k = 0.f;
-    else
-        bc_k = bc_dx / bc_dy;
+    float bc_dz = c->z - b->z;
+    float bc_k = (bc_dy == 0.f) ? 0.f : bc_dx / bc_dy;
+    float bc_z_k = (bc_dy == 0.f) ? 0.f : bc_dz / bc_dy;
 
     /* Offset by .5f because we're using pixel centers for the vectors.
-       We ceil (saxu) the coordinates to comply with the top-left rule */
+       I ceil (saxu) the coordinates to comply with the top-left rule. */
     for (int y = saxu(a->y - .5f); y < saxu(c->y - .5f); y++) {
-        float y_progress = y + .5f;
-        int left_x = saxu((a->x + (y_progress - a->y) * ac_k) - .5f);
+        int left_x = saxu((a->x + (y + .5f - a->y) * ac_k) - .5f);
         int right_x;
-        if (y < saxu(b->y -.5f) || (int)b->y == (int)c->y) {
+        float z_start = a->z + (y + .5f - a->y) * ac_z_k;
+        float z_end;
+        if (y < saxu(b->y - .5f) || (int)b->y == (int)c->y) {
             // First half
-            right_x = saxu((a->x + (y_progress - a->y) * ab_k) - .5f);
+            right_x = saxu((a->x + (y + .5f - a->y) * ab_k) - .5f);
+            z_end = a->z + (y + .5f - a->y) * ab_z_k;
         } else {
             // Second half
-            right_x = saxu((b->x + (y_progress - b->y) * bc_k) - .5f);
+            right_x = saxu((b->x + (y + .5f - b->y) * bc_k) - .5f);
+            z_end = b->z + (y + .5f - a->y) * bc_z_k;
         }
         int x_start, x_end;
         if (left_x > right_x) {
@@ -416,18 +413,23 @@ void triangle(Vec3f v[3], Vec2f vt[3], Bitmap* tex, float* zbuf, float intensity
             x_start = left_x;
             x_end = right_x;
         }
+
         for (int x = x_start; x < x_end; x++) {
-            gfx_color(intensity * 255, intensity * 255, intensity * 255);
-            point(x, y);
+            float z = lerp(z_start, z_end, (x - x_start) / (float) (x_end - x_start));
+            if (zbuf[x + y * ZBUFFER_WIDTH] < z) {
+                zbuf[x + y * ZBUFFER_WIDTH] = z;
+                gfx_color(intensity * 255, intensity * 255, intensity * 255);
+                point(x, y);
+            }
         }
     }
 
-    if (wireframe) {
-        gfx_color(255, 0, 0);
-        line(a->x, a->y, c->x, c->y);
-        line(a->x, a->y, b->x, b->y);
-        line(b->x, b->y, c->x, c->y);
-    }
+    /* if (wireframe) { */
+    /*     gfx_color(255, 0, 0); */
+    /*     line(a->x, a->y, c->x, c->y); */
+    /*     line(a->x, a->y, b->x, b->y); */
+    /*     line(b->x, b->y, c->x, c->y); */
+    /* } */
 }
 
 char* obj_file_name = "african_head.obj";
@@ -521,6 +523,7 @@ int main(int argc, char** argv)
                 triangle(screen_coords, tex_coords, texture, zbuffer, intensity);
             }
         }
+
         /* Vec3f screen_coords[3] = { */
         /*     {.x = 20, .y = 20, .z = 0.1}, */
         /*     {.x = 100, .y = 40, .z = 0.1}, */
@@ -535,6 +538,7 @@ int main(int argc, char** argv)
 
         /* for (int i = 0; i < width; i+=SCALE) { */
         /*     gfx_line() */
+
         gfx_flush();
         int c, quit = 0;
         while ((c = gfx_wait())) {
