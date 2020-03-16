@@ -1,2 +1,1 @@
-- optimize triangle fn (declare deltas inside ifs)
-- optimize k vars in triangle fn, use addition instead of mult
+- use lerp fn for z interpolation
