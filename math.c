@@ -35,6 +35,19 @@ float maxf(float a, float b)
     return (a > b) ? a : b;
 }
 
+float minf(float a, float b)
+{
+    return (a < b) ? a : b;
+}
+
+// The same as ceil. Saxuravi ;)
+int saxu(float n)
+{
+    if ((n - (int)n) > 0.f)
+        return ((int)n) + 1;
+    return (int) n;
+}
+
 int is_num(char c)
 {
     return c >= '0' && c <= '9';
