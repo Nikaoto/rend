@@ -133,8 +133,8 @@ Bitmap* parse_tga_file(char* file_path, int flip_vertically)
     if (flip_vertically) {
         for (int i = 0; i < bmp->width; i++) {
             for (int j = 0; j < bmp->height/2; j++) {
-                int curr_i = (i + j * bmp->width) * bytes_per_pixel;
-                int oppo_i = (i + (bmp->height - j) * bmp->width) * bytes_per_pixel;
+                int curr_i = (i + j * bmp->width) * 3;
+                int oppo_i = (i + (bmp->height - j) * bmp->width) * 3;
                 unsigned char tmpr = bmp->data[curr_i];
                 unsigned char tmpg = bmp->data[curr_i + 1];
                 unsigned char tmpb = bmp->data[curr_i + 2];
