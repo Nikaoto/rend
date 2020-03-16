@@ -354,8 +354,10 @@ void triangle(Vec3f v[3], Vec2f vt[3], Bitmap* tex, float* zbuf, float intensity
     Vec3f* b = v + 1;
     Vec3f* c = v + 2;
 
-    // Can't draw flat triangle since it has no thickness
+    // Skip if triangle parallel to view (invisible)
     if (a->y == b->y && a->y == c->y) return;
+
+    // Skip if texture coords are wrong
     if (vt[0].y == vt[1].y && vt[0].y == vt[2].y) return;
 
     // Sort vertices by y coord ascending (a->y < b->y < c->y)
@@ -391,7 +393,9 @@ void triangle(Vec3f v[3], Vec2f vt[3], Bitmap* tex, float* zbuf, float intensity
 
     /* Offset by .5f because we're using pixel centers for the vectors.
        I ceil (saxu) the coordinates to comply with the top-left rule. */
-    for (int y = saxu(a->y - .5f); y < saxu(c->y - .5f); y++) {
+    int y_start = saxu(a->y - .5f);
+    int y_end = saxu(c->y - .5f);
+    for (int y = y_start; y < y_end; y++) {
         int left_x = saxu((a->x + (y + .5f - a->y) * ac_k) - .5f);
         int right_x;
         float z_start = a->z + (y + .5f - a->y) * ac_z_k;
@@ -414,22 +418,39 @@ void triangle(Vec3f v[3], Vec2f vt[3], Bitmap* tex, float* zbuf, float intensity
             x_end = right_x;
         }
 
+        // Interpolate texture coordinates
+        float y_progress = (y + .5f - a->y) / (float) (y_end - y_start);
+        float ty = lerp(vt[0].y, vt[2].y, y_progress);
+        float tx_start = lerp(vt[0].x, vt[2].x, y_progress);
+        float tx_end;
+        if (ty < vt[1].y || vt[2].y == vt[3].y) {
+            tx_end = lerp(vt[0].x, vt[1].x, y_progress);
+        } else {
+            tx_end = lerp(vt[1].x, vt[2].x, y_progress);
+        }
+
         for (int x = x_start; x < x_end; x++) {
-            float z = lerp(z_start, z_end, (x - x_start) / (float) (x_end - x_start));
+            float x_progress = (x - x_start) / (float) (x_end - x_start);
+            float z = lerp(z_start, z_end, x_progress);
             if (zbuf[x + y * ZBUFFER_WIDTH] < z) {
-                zbuf[x + y * ZBUFFER_WIDTH] = z;
-                gfx_color(intensity * 255, intensity * 255, intensity * 255);
+                float tx = lerp(tx_start, tx_end, x_progress);
+                int tex_i = ((int) (tx * tex->width) + (int) (ty * tex->height) * tex->width) * 3;
+                gfx_color(
+                    intensity * tex->data[tex_i],
+                    intensity * tex->data[tex_i + 1],
+                    intensity * tex->data[tex_i + 2]);
                 point(x, y);
+                zbuf[x + y * ZBUFFER_WIDTH] = z;
             }
         }
     }
 
-    /* if (wireframe) { */
-    /*     gfx_color(255, 0, 0); */
-    /*     line(a->x, a->y, c->x, c->y); */
-    /*     line(a->x, a->y, b->x, b->y); */
-    /*     line(b->x, b->y, c->x, c->y); */
-    /* } */
+    if (wireframe) {
+        gfx_color(255, 0, 0);
+        line(a->x, a->y, c->x, c->y);
+        line(a->x, a->y, b->x, b->y);
+        line(b->x, b->y, c->x, c->y);
+    }
 }
 
 char* obj_file_name = "african_head.obj";
@@ -514,11 +535,13 @@ int main(int argc, char** argv)
                 tex_coords[j].y = vt.y;
             }
 
-            // Get color of the face
+            // Get light intensity depending on triangle orientation
             Vec3f side1 = sub_vec3f(world_coords[1], world_coords[0]);
             Vec3f side2 = sub_vec3f(world_coords[2], world_coords[0]);
             Vec3f normal = normalize(cross_prod(side1, side2));
             float intensity = dot_prod(normal, light_dir);
+
+            // Only draw triangle if not back-facing (effectively culling back-faces)
             if (intensity > 0) {
                 triangle(screen_coords, tex_coords, texture, zbuffer, intensity);
             }
