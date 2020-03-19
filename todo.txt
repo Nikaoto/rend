@@ -1,1 +1,2 @@
 - use lerp fn for z interpolation
+- fix box.obj counter-clockwise ordering of texture coords
