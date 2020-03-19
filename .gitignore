@@ -3,5 +3,5 @@ rend
 rend_g
 rend_g.dSYM
 *.o
-
+.objs
 
