@@ -569,6 +569,8 @@ int main(int argc, char** argv)
             if (c == 'q' || c == '\x1b') {
                 quit = 1;
                 break;
+            } else if (c == 'c') {
+                gfx_clear();
             } else if (c == 'w') {
                 wireframe = !wireframe;
                 break;
