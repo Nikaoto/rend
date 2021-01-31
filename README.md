@@ -1,5 +1,5 @@
 # rend
-Software renderer I wrote from complete scratch in C99 based on https://github.com/ssloy/tinyrenderer.
+Software renderer I wrote from complete scratch in C99 based on [https://github.com/ssloy/tinyrenderer](https://github.com/ssloy/tinyrenderer).
 
 The `tgaview/` directory contains a TGA image parser also written from scratch in C99.
 
