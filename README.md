@@ -3,13 +3,13 @@ Software renderer I wrote from complete scratch in C99 based on https://github.c
 
 The `tgaview/` directory contains a TGA image parser also written from scratch in C99.
 
-![rendering the 3D model with rend](./rend_preview.gif)
+![rendering the 3D model with and without wireframe with rend](./rend_preview.gif)
 
 Uses X11, only works on Linux with X11 or Mac OS with Xquartz.
 
 This code has two dependencies, mainly:
-- X11, which is called from `gfx.h` to create windows and blit pixels.
-- libc, especially `sqrt` from the math library. Will be replaced with own implementation.
+* X11, which is called from `gfx.h` to create windows and blit pixels.
+* libc, especially `sqrt` from the math library. Will be replaced with own implementation.
 
 ## Building
 ```
