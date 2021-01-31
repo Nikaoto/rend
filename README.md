@@ -1,17 +1,19 @@
 # rend
-Software renderer written from complete scratch in C99 based on https://github.com/ssloy/tinyrenderer.
+Software renderer I wrote from complete scratch in C99 based on https://github.com/ssloy/tinyrenderer.
 
 The `tgaview/` directory contains a TGA image parser also written from scratch in C99.
+
+![rendering the 3D model with rend](./rend_preview.gif)
 
 Uses X11, only works on Linux with X11 or Mac OS with Xquartz.
 
 This code has two dependencies, mainly:
-- X11, which is called from `gfx.h` to create windows and blit pixels
-- `sqrt` from the math library, will be replaced with own implementation
+- X11, which is called from `gfx.h` to create windows and blit pixels.
+- libc, especially `sqrt` from the math library. Will be replaced with own implementation.
 
 ## Building
 ```
-git clone https://github.com/Nikaoto/
+git clone
 cd rend
 make
 ```
