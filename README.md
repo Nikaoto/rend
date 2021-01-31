@@ -8,6 +8,7 @@ The `tgaview/` directory contains a TGA image parser also written from scratch i
 Uses X11, only works on Linux with X11 or Mac OS with Xquartz.
 
 This code has two dependencies, mainly:
+
 * X11, which is called from `gfx.h` to create windows and blit pixels.
 * libc, especially `sqrt` from the math library. Will be replaced with own implementation.
 
