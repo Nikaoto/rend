@@ -5,12 +5,12 @@ The `tgaview/` directory contains a TGA image parser also written from scratch i
 
 ![rendering the 3D model with and without wireframe with rend](./rend_preview.gif)
 
-Uses X11, only works on Linux with X11 or Mac OS with Xquartz.
+Tested to work on Linux with X11 or Mac OS with Xquartz.
 
 This code has two dependencies, mainly:
 
 * X11, which is called from `gfx.h` to create windows and blit pixels.
-* libc, especially `sqrt` from the math library. Will be replaced with own implementation.
+* libc, especially `sqrt` from the math library. `sqrt` be replaced with own implementation.
 
 ## Building
 ```
